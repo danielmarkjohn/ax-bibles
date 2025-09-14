@@ -1,4 +1,4 @@
-# AX Tracker Bible App
+# A Bible App
 
 A modern Bible app built with **Vite**, **React**, and **TailwindCSS**.
 
