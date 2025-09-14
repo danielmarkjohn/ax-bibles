@@ -1,9 +1,4 @@
-import React from 'react';
-
+// This file is deprecated - functionality moved to BibleReader.tsx
 export default function BookList() {
-  return (
-    <div className="p-4 text-secondary">
-      Books will load here...
-    </div>
-  );
+  return null;
 }
