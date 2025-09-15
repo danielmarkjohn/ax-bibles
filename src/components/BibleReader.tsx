@@ -1,12 +1,16 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChapterInfo, fetchTranslations, fetchVerses, Translation, Verse } from '../api/bibleClient';
 import { BIBLE_BOOKS } from '../config/bibleConfig';
-import bibleStructure from '../config/bible_structure.json';
 import ActionSheet from './ActionSheet';
 import SettingsModal from './SettingsModal';
 import SearchModal from './SearchModal';
 import BookmarksModal from './BookmarksModal';
+import BiblicalLoader from './BiblicalLoader';
+import BibleCache from '../utils/bibleCache';
+
+const bibleCache = BibleCache.getInstance();
 
 interface BibleStructure {
   [bookId: string]: {
@@ -16,8 +20,6 @@ interface BibleStructure {
     };
   };
 }
-
-const structure = bibleStructure as BibleStructure;
 
 interface BibleReaderProps { }
 
@@ -93,6 +95,10 @@ export default function BibleReader({ }: BibleReaderProps) {
   const readerRef = useRef<HTMLDivElement>(null);
   const textSelectionRef = useRef<Selection | null>(null);
 
+  // Add animation state
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationDirection, setAnimationDirection] = useState<'left' | 'right'>('right');
+
   // Load settings from localStorage
   useEffect(() => {
     const savedSettings = localStorage.getItem('bible_reader_settings');
@@ -150,7 +156,7 @@ export default function BibleReader({ }: BibleReaderProps) {
         if (verseId) {
           const newHighlight: Highlight = {
             verseId,
-            color: color + '40', // Add transparency
+            color: color + '80', // Increased opacity from 40 to 80
             timestamp: Date.now(),
           };
           setHighlights(prev => [...prev, newHighlight]);
@@ -206,13 +212,17 @@ export default function BibleReader({ }: BibleReaderProps) {
 
   // Navigation functions
   const goToPreviousChapter = () => {
-    if (selectedChapter > 1) {
+    if (selectedChapter > 1 && !isAnimating) {
+      setIsAnimating(true);
+      setAnimationDirection('left');
       setSelectedChapter(selectedChapter - 1);
     }
   };
 
   const goToNextChapter = () => {
-    if (selectedChapter < availableChapters.length) {
+    if (selectedChapter < availableChapters.length && !isAnimating) {
+      setIsAnimating(true);
+      setAnimationDirection('right');
       setSelectedChapter(selectedChapter + 1);
     }
   };
@@ -279,10 +289,11 @@ export default function BibleReader({ }: BibleReaderProps) {
       const chapters = getAvailableChapters(selectedBook);
       setAvailableChapters(chapters);
       
-      // Clear verses when book changes
-      if (selectedChapter > 0) {
-        setSelectedChapter(0);
-        setVerses([]);
+      // Only clear verses if book actually changed and we have a different chapter selected
+      const savedChapter = localStorage.getItem('selectedChapter');
+      if (!savedChapter || selectedChapter === 0) {
+        // Set to chapter 1 if no saved chapter or chapter is 0
+        setSelectedChapter(1);
       }
     }
   }, [selectedBook]);
@@ -299,27 +310,25 @@ export default function BibleReader({ }: BibleReaderProps) {
       const data = await fetchTranslations();
       setTranslations(data);
 
-      // Load saved preferences
+      // Load saved preferences or set defaults
       const savedTranslation = localStorage.getItem('selectedTranslation');
       const savedBook = localStorage.getItem('selectedBook');
       const savedChapter = localStorage.getItem('selectedChapter');
 
-      // Set translation
-      const translationToUse = savedTranslation || (data.length > 0 ? String(data[0].module) : '');
+      // Set translation (default to first available)
+      const translationToUse = savedTranslation || (data.length > 0 ? String(data[0].abbreviation || data[0].name) : '');
       if (translationToUse) {
         setSelectedTranslation(translationToUse);
-
-        // Set book
-        const bookToUse = savedBook || (BIBLE_BOOKS.length > 0 ? BIBLE_BOOKS[0] : '');
-        if (bookToUse) {
-          setSelectedBook(bookToUse);
-
-          // Only set chapter if we have a saved one
-          if (savedChapter) {
-            setSelectedChapter(parseInt(savedChapter));
-          }
-        }
       }
+
+      // Set book (default to Genesis)
+      const bookToUse = savedBook || 'Genesis';
+      setSelectedBook(bookToUse);
+
+      // Set chapter (default to 1)
+      const chapterToUse = savedChapter ? parseInt(savedChapter) : 1;
+      setSelectedChapter(chapterToUse);
+
     } catch (error) {
       console.error('Failed to load translations:', error);
     } finally {
@@ -343,9 +352,12 @@ export default function BibleReader({ }: BibleReaderProps) {
   };
 
   const handleChapterSelect = (chapter: number) => {
-    setSelectedChapter(chapter);
-    // Save to localStorage
-    localStorage.setItem('selectedChapter', chapter.toString());
+    if (!isAnimating) {
+      setIsAnimating(true);
+      setAnimationDirection(chapter > selectedChapter ? 'right' : 'left');
+      setSelectedChapter(chapter);
+      localStorage.setItem('selectedChapter', chapter.toString());
+    }
   };
 
   // Get book index (1-based) from book name
@@ -356,64 +368,72 @@ export default function BibleReader({ }: BibleReaderProps) {
   // Get available chapters for selected book
   const getAvailableChapters = (bookName: string): number[] => {
     const bookIndex = getBookIndex(bookName);
-    const bookData = structure[bookIndex.toString()];
-    
-    if (!bookData || bookData.totalChapters === 0) {
-      return [];
-    }
-    
-    return Array.from({ length: bookData.totalChapters }, (_, i) => i + 1);
+    return bibleCache.getBookChapters(bookIndex);
   };
 
   // Get verse count for a specific chapter
   const getVerseCount = (bookName: string, chapter: number): number => {
     const bookIndex = getBookIndex(bookName);
-    const bookData = structure[bookIndex.toString()];
-    
-    if (!bookData || !bookData.chapters[chapter.toString()]) {
-      return 0;
-    }
-    
-    return bookData.chapters[chapter.toString()];
+    return bibleCache.getVerseCount(bookIndex, chapter);
   };
 
-  // Save selections to localStorage
+  // Save selections to localStorage with error handling
   useEffect(() => {
     if (selectedTranslation) {
-      localStorage.setItem('selectedTranslation', selectedTranslation);
+      try {
+        localStorage.setItem('selectedTranslation', selectedTranslation);
+      } catch (error) {
+        console.warn('Failed to save translation preference:', error);
+      }
     }
   }, [selectedTranslation]);
 
   useEffect(() => {
     if (selectedBook) {
-      localStorage.setItem('selectedBook', selectedBook);
+      try {
+        localStorage.setItem('selectedBook', selectedBook);
+      } catch (error) {
+        console.warn('Failed to save book preference:', error);
+      }
     }
   }, [selectedBook]);
 
   useEffect(() => {
     if (selectedChapter > 0) {
-      localStorage.setItem('selectedChapter', selectedChapter.toString());
+      try {
+        localStorage.setItem('selectedChapter', selectedChapter.toString());
+      } catch (error) {
+        console.warn('Failed to save chapter preference:', error);
+      }
     }
   }, [selectedChapter]);
+
+  // Reset animation when verses load
+  useEffect(() => {
+    if (verses.length > 0) {
+      const timer = setTimeout(() => setIsAnimating(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [verses]);
 
   return (
     <div className={`h-full flex flex-col bg-gray-900 text-gray-100 ${readerSettings.fullscreen ? 'fixed inset-0 z-50' : ''}`}>
       {/* Modern Header */}
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 backdrop-blur-sm px-4 py-4 flex items-center justify-between border-b border-gray-700/50 shadow-lg flex-shrink-0">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-1">
           <div className="flex flex-col">
-            <span className="text-white font-semibold text-lg">
-              {selectedBook && selectedChapter > 0 ? `${selectedBook} ${selectedChapter} -` : 'Select Chapter'}
-              {selectedTranslation && (
-            <span className="text-white font-semibold text-lg ml-2">
-                  {selectedTranslation.toUpperCase()}
-                </span>
-              )}
-            </span>
-
+            <div className="text-white font-semibold text-lg">
+              {selectedBook || 'Select Book'}
+            </div>
+            {selectedChapter > 0 && selectedTranslation && (
+              <div className="text-gray-300 text-sm">
+                Chapter {selectedChapter} ({selectedTranslation.toUpperCase()})
+              </div>
+            )}
           </div>
         </div>
-
+        
+        {/* Header buttons */}
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowActionSheet(true)}
@@ -424,15 +444,23 @@ export default function BibleReader({ }: BibleReaderProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
+          
+          {/* Search button with loading state */}
           <button
             onClick={() => setShowSearch(true)}
             className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 hover:scale-105"
             title="Search"
+            disabled={loading.verses}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            {loading.verses ? (
+              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-400 border-t-blue-400"></div>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            )}
           </button>
+          
           <button
             onClick={() => setShowNotes(true)}
             className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 hover:scale-105"
@@ -457,22 +485,7 @@ export default function BibleReader({ }: BibleReaderProps) {
 
       {/* Reader Content */}
       <div className="flex-1 overflow-y-auto" style={readerStyles}>
-        {loading.verses ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="relative">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-700 border-t-blue-500"></div>
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-400 animate-pulse"></div>
-              </div>
-              <div className="text-center">
-                <span className="font-medium text-lg">Loading verses...</span>
-                <p className="text-sm mt-1 opacity-70">
-                  {selectedBook} {selectedChapter}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : verses.length > 0 ? (
+        {verses.length > 0 ? (
           <div className="relative">
             {/* Navigation Arrows */}
             <button
@@ -515,7 +528,7 @@ export default function BibleReader({ }: BibleReaderProps) {
                   <div
                     key={verse._id}
                     data-verse-id={verse._id}
-                    className="group relative leading-relaxed break-inside-avoid mb-4 p-3 rounded-lg hover:bg-gray-800/30 transition-all"
+                    className="group relative leading-relaxed break-inside-avoid mb-4 p-3 rounded-lg transition-all"
                     style={highlight ? {
                       backgroundColor: highlight.color,
                       border: `1px solid ${highlight.color}80`
@@ -547,26 +560,7 @@ export default function BibleReader({ }: BibleReaderProps) {
               })}
             </div>
           </div>
-        ) : selectedBook && availableChapters.length > 0 ? (
-          <div className="p-6">
-            <h3 className="text-xl font-semibold mb-6 text-center">Select Chapter</h3>
-            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3 max-w-4xl mx-auto">
-              {availableChapters.map((chapterNum) => {
-                const verseCount = getVerseCount(selectedBook, chapterNum);
-                return (
-                  <button
-                    key={chapterNum}
-                    onClick={() => handleChapterSelect(chapterNum)}
-                    className="bg-gray-800 hover:bg-blue-600 text-white font-semibold py-3 px-2 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-lg flex flex-col items-center space-y-1"
-                  >
-                    <span className="text-lg">{chapterNum}</span>
-                    <span className="text-xs opacity-70">{verseCount}v</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
+        ) : !loading.verses ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center max-w-md mx-auto p-8">
               <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-6">
@@ -578,13 +572,13 @@ export default function BibleReader({ }: BibleReaderProps) {
               <p className="opacity-70 mb-4">Select a book and chapter to start reading</p>
               <button
                 onClick={() => setShowActionSheet(true)}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-lg"
               >
-                Open Menu
+                Choose Scripture
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Text Selection Menu */}

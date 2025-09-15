@@ -45,33 +45,75 @@ const CACHE_PREFIX = 'bible_cache_';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 function getCacheKey(endpoint: string): string {
-  return `${CACHE_PREFIX}${endpoint}`;
+  return `${CACHE_PREFIX}${endpoint.replace(/[^a-zA-Z0-9]/g, '_')}`;
 }
 
 function getFromCache<T>(key: string): T | null {
   try {
-    const cached = localStorage.getItem(getCacheKey(key));
+    const cacheKey = getCacheKey(key);
+    const cached = localStorage.getItem(cacheKey);
     if (!cached) return null;
     
-    const { data, timestamp } = JSON.parse(cached);
-    if (Date.now() - timestamp > CACHE_DURATION) {
-      localStorage.removeItem(getCacheKey(key));
+    const parsed = JSON.parse(cached);
+    if (!parsed.data || !parsed.timestamp) {
+      localStorage.removeItem(cacheKey);
       return null;
     }
-    return data;
-  } catch {
+    
+    if (Date.now() - parsed.timestamp > CACHE_DURATION) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+    return parsed.data;
+  } catch (error) {
+    console.warn('Cache read error:', error);
     return null;
   }
 }
 
 function setCache<T>(key: string, data: T): void {
+  const cacheKey = getCacheKey(key);
+  const cacheData = {
+    data,
+    timestamp: Date.now()
+  };
+  
   try {
-    localStorage.setItem(getCacheKey(key), JSON.stringify({
-      data,
-      timestamp: Date.now()
-    }));
+    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
   } catch (error) {
     console.warn('Failed to cache data:', error);
+    // Clear some cache if storage is full
+    try {
+      clearOldCache();
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (retryError) {
+      console.warn('Cache retry failed:', retryError);
+    }
+  }
+}
+
+function clearOldCache(): void {
+  try {
+    const keys = Object.keys(localStorage);
+    const cacheKeys = keys.filter(key => key.startsWith(CACHE_PREFIX));
+    
+    // Sort by timestamp and remove oldest entries
+    const cacheEntries = cacheKeys.map(key => {
+      try {
+        const data = JSON.parse(localStorage.getItem(key) || '{}');
+        return { key, timestamp: data.timestamp || 0 };
+      } catch {
+        return { key, timestamp: 0 };
+      }
+    }).sort((a, b) => a.timestamp - b.timestamp);
+    
+    // Remove oldest 25% of cache entries
+    const toRemove = Math.ceil(cacheEntries.length * 0.25);
+    for (let i = 0; i < toRemove; i++) {
+      localStorage.removeItem(cacheEntries[i].key);
+    }
+  } catch (error) {
+    console.warn('Cache cleanup error:', error);
   }
 }
 

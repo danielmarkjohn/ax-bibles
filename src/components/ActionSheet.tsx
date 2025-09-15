@@ -75,11 +75,13 @@ export default function ActionSheet({
       setExpandedBook('');
     } else {
       setExpandedBook(book);
-      onBookChange(book);
+      // Remove automatic book change - only expand/collapse
     }
   };
 
   const handleChapterClick = (chapter: number) => {
+    // Only change book when chapter is selected
+    onBookChange(expandedBook);
     onChapterSelect(chapter);
     onClose();
   };

@@ -1,25 +1,27 @@
+
 import React, { useState, useEffect } from 'react';
 import { fetchTranslations, Translation } from '../api/bibleClient';
+import { BIBLE_BOOKS } from '../config/bibleConfig';
+import BiblicalLoader from './BiblicalLoader';
 
 interface BibleOverviewProps {
   onBack: () => void;
 }
 
-const bibleBooks = [
-  // Old Testament
-  { id: 1, name: 'Genesis', description: 'Meaning "the beginning or origin of something", Genesis is the first book of the Bible, recording Creation, the fall of man and the early years of the nation of Israel.', author: 'Moses', year: '1450-1410 B.C.', genre: 'Narrative', readingTime: '135 mins', testament: 'Old' },
-  { id: 2, name: 'Exodus', description: 'God appoints Moses to lead the Israelites out of slavery in Egypt to the Promised Land of Canaan, establishing a special relationship with them on the way to Mount Sinai.', author: 'Moses', year: '1450-1410 B.C.', genre: 'Narrative', readingTime: '110 mins', testament: 'Old' },
-  { id: 3, name: 'Leviticus', description: 'God gives Israel rules to live by and instructions to present themselves holy before Him.', author: 'Moses', year: '1445-1444 B.C.', genre: 'Law', readingTime: '80 mins', testament: 'Old' },
-  { id: 4, name: 'Numbers', description: 'A sequel to Exodus, Numbers takes its name from two censuses (or "numberings") of the people of Israel, following their journey through the wilderness for forty years.', author: 'Moses', year: '1450-1410 B.C.', genre: 'Narrative', readingTime: '105 mins', testament: 'Old' },
-  { id: 5, name: 'Deuteronomy', description: 'A farewell speech from Moses to the people of Israel shortly before his death, Deuteronomy recaps the promises of God and provides instructions to obey Him in the Promised Land.', author: 'Moses', year: '1407-1406 B.C.', genre: 'Narrative', readingTime: '100 mins', testament: 'Old' },
-  // Add more books as needed...
-  
-  // New Testament
-  { id: 40, name: 'Matthew', description: 'The first book of the New Testament, the Gospel of Matthew was primarily written for the Jews and references many Old Testament prophecies that were fulfilled by Jesus.', author: 'Matthew (Levi)', year: 'A.D. 60-65', genre: 'Gospel', readingTime: '80 mins', testament: 'New' },
-  { id: 41, name: 'Mark', description: 'Mark is the shortest Gospel, which emphasises Jesus\' servanthood and miracles.', author: 'John Mark', year: 'A.D. 55-65', genre: 'Gospel', readingTime: '50 mins', testament: 'New' },
-  { id: 42, name: 'Luke', description: 'Unlike the other Gospel writers, Luke was a Gentile who wrote an account of Jesus\' life for those outside the Jewish faith.', author: 'Luke', year: 'A.D. 60', genre: 'Gospel', readingTime: '80 mins', testament: 'New' },
-  { id: 43, name: 'John', description: 'The last of the four Gospels, John is an eyewitness account of Jesus\' ministry that focuses on the deeper meaning of events surrounding Christ\'s life, death, and resurrection.', author: 'John', year: 'A.D. 85-90', genre: 'Gospel', readingTime: '65 mins', testament: 'New' },
-];
+const bibleBooks = BIBLE_BOOKS.map((name, index) => {
+  const isOldTestament = index < 39;
+  return {
+    id: index + 1,
+    name,
+    testament: isOldTestament ? 'Old' : 'New',
+    // You can add more details here if needed
+    description: `The book of ${name}`,
+    author: 'Various',
+    year: isOldTestament ? 'Before Christ' : 'A.D. 50-100',
+    genre: isOldTestament ? 'Old Testament' : 'New Testament',
+    readingTime: '60 mins'
+  };
+});
 
 export default function BibleOverview({ onBack }: BibleOverviewProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'translations' | 'books'>('overview');
@@ -161,28 +163,41 @@ export default function BibleOverview({ onBack }: BibleOverviewProps) {
         {activeTab === 'translations' && (
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-white mb-2">Available Translations</h2>
-              <p className="text-gray-400">Explore different Bible translations and versions</p>
+              <h2 className="text-2xl font-bold text-white mb-2">Bible Translations</h2>
+              <p className="text-gray-400">Explore different Bible translations</p>
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-emerald-500"></div>
+                <BiblicalLoader 
+                  message="Loading translations..."
+                  variant="verse"
+                />
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 {translations.map((translation) => (
-                  <div key={translation._id} className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-emerald-500 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">
-                          {translation.abbreviation?.substring(0, 2) || translation.name.substring(0, 2)}
-                        </span>
-                      </div>
+                  <div key={translation._id} className="bg-gray-800 rounded-xl p-5 border border-gray-700 hover:border-emerald-500 transition-all duration-200 hover:shadow-lg">
+                    <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-semibold text-white">{translation.name}</h3>
-                        <p className="text-gray-400 text-sm">{translation.abbreviation}</p>
+                        <h3 className="font-semibold text-white text-lg mb-1">
+                          {translation.name}
+                        </h3>
+                        <p className="text-emerald-400 text-sm font-medium">
+                          {translation.shortname || 
+                           (typeof translation.module === 'string' ? translation.module.toUpperCase() : '')}
+                        </p>
                       </div>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      {translation.year && (
+                        <p className="text-gray-300 text-sm">Published {translation.year}</p>
+                      )}
+                      
+                      {translation.publisher && typeof translation.publisher === 'string' && (
+                        <p className="text-gray-400 text-sm">{translation.publisher}</p>
+                      )}
                     </div>
                   </div>
                 ))}

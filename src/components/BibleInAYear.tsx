@@ -646,64 +646,64 @@ export default function BibleInAYear({ onBack }: BibleInAYearProps) {
 
   return (
     <div className="h-full flex flex-col bg-gray-900 text-gray-100 pb-16">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-800 to-purple-900 backdrop-blur-sm px-4 py-4 flex items-center justify-between border-b border-purple-700/50 shadow-lg flex-shrink-0">
+      {/* Header - Mobile Optimized */}
+      <div className="bg-gradient-to-r from-purple-800 to-purple-900 backdrop-blur-sm px-3 py-3 flex items-center justify-between border-b border-purple-700/50 shadow-lg flex-shrink-0">
         <button
           onClick={onBack}
           className="p-2 text-purple-200 hover:text-white hover:bg-purple-700/50 rounded-xl transition-all duration-200"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <div className="flex flex-col items-center">
-          <span className="text-white font-semibold text-lg">Bible in a Year</span>
-          <span className="text-purple-200 text-sm font-medium">Complete Reading Plan</span>
+          <span className="text-white font-semibold text-base">Bible in a Year</span>
+          <span className="text-purple-200 text-xs font-medium">Complete Reading Plan</span>
         </div>
-        <div className="w-10"></div>
+        <div className="w-9"></div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto p-6">
-          {/* Introduction */}
-          <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-3xl p-8 mb-8 shadow-2xl">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-4xl mx-auto p-3 sm:p-6">
+          {/* Introduction - Mobile Optimized */}
+          <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-4 sm:p-8 mb-4 sm:mb-8 shadow-2xl">
+            <div className="text-center mb-4 sm:mb-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">{readingPlan.title}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">{readingPlan.title}</h2>
             </div>
             
-            <div className="space-y-4 text-purple-100">
-              <p className="leading-relaxed">{readingPlan.description}</p>
+            <div className="space-y-3 sm:space-y-4 text-purple-100">
+              <p className="leading-relaxed text-sm sm:text-base">{readingPlan.description}</p>
               
-              <div className="bg-white/10 rounded-xl p-4">
-                <h3 className="font-semibold text-white mb-2">Structure</h3>
-                <p className="text-sm leading-relaxed">{readingPlan.structure}</p>
+              <div className="bg-white/10 rounded-xl p-3 sm:p-4">
+                <h3 className="font-semibold text-white mb-2 text-sm sm:text-base">Structure</h3>
+                <p className="text-xs sm:text-sm leading-relaxed">{readingPlan.structure}</p>
               </div>
             </div>
           </div>
 
-          {/* Monthly Plan */}
-          <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-white mb-6 text-center">Reading Schedule</h3>
+          {/* Monthly Plan - Mobile Optimized */}
+          <div className="space-y-3 sm:space-y-4">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 text-center">Reading Schedule</h3>
             
             {readingPlan.months.map((monthData, monthIndex) => (
-              <div key={monthIndex} className="bg-gray-800 rounded-2xl overflow-hidden">
+              <div key={monthIndex} className="bg-gray-800 rounded-xl sm:rounded-2xl overflow-hidden">
                 <button
                   onClick={() => setSelectedMonth(selectedMonth === monthIndex ? null : monthIndex)}
-                  className="w-full p-6 text-left hover:bg-gray-700 transition-colors"
+                  className="w-full p-4 sm:p-6 text-left hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xl font-bold text-white">{monthData.month}</h4>
-                      <p className="text-purple-400 font-medium">{monthData.range}</p>
+                      <h4 className="text-lg sm:text-xl font-bold text-white">{monthData.month}</h4>
+                      <p className="text-purple-400 font-medium text-sm sm:text-base">{monthData.range}</p>
                     </div>
                     <svg 
-                      className={`w-6 h-6 text-gray-400 transition-transform ${
+                      className={`w-5 h-5 sm:w-6 sm:h-6 text-gray-400 transition-transform ${
                         selectedMonth === monthIndex ? 'rotate-180' : ''
                       }`} 
                       fill="none" 
@@ -716,17 +716,17 @@ export default function BibleInAYear({ onBack }: BibleInAYearProps) {
                 </button>
 
                 {selectedMonth === monthIndex && (
-                  <div className="px-6 pb-6 space-y-6">
+                  <div className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-4 sm:space-y-6">
                     {monthData.sections.map((section, sectionIndex) => (
-                      <div key={sectionIndex} className="bg-gray-700 rounded-xl p-4">
-                        <h5 className="text-lg font-bold text-white mb-2">{section.title}</h5>
-                        <p className="text-gray-300 text-sm mb-4 leading-relaxed">{section.description}</p>
+                      <div key={sectionIndex} className="bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4">
+                        <h5 className="text-base sm:text-lg font-bold text-white mb-2">{section.title}</h5>
+                        <p className="text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4 leading-relaxed">{section.description}</p>
                         
-                        <div className="space-y-2">
+                        <div className="space-y-1 sm:space-y-2">
                           {section.readings.map((reading, readingIndex) => (
-                            <div key={readingIndex} className="flex items-center space-x-3 p-2 bg-gray-600 rounded-lg">
-                              <div className="w-2 h-2 bg-purple-400 rounded-full flex-shrink-0"></div>
-                              <span className="text-gray-200 text-sm font-mono">{reading}</span>
+                            <div key={readingIndex} className="flex items-start space-x-2 sm:space-x-3 p-2 bg-gray-600 rounded-md sm:rounded-lg">
+                              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-400 rounded-full flex-shrink-0 mt-1.5 sm:mt-2"></div>
+                              <span className="text-gray-200 text-xs sm:text-sm font-mono leading-relaxed">{reading}</span>
                             </div>
                           ))}
                         </div>
@@ -737,15 +737,15 @@ export default function BibleInAYear({ onBack }: BibleInAYearProps) {
               </div>
             ))}
 
-            {/* Coming Soon */}
-            <div className="bg-gray-800 rounded-2xl p-6 text-center">
-              <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+            {/* Coming Soon - Mobile Optimized */}
+            <div className="bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-center">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
-              <h4 className="text-lg font-bold text-white mb-2">Complete Plan Coming Soon</h4>
-              <p className="text-gray-400">We're adding all 12 months with detailed daily readings</p>
+              <h4 className="text-base sm:text-lg font-bold text-white mb-2">Complete Plan Coming Soon</h4>
+              <p className="text-gray-400 text-sm">We're adding all 12 months with detailed daily readings</p>
             </div>
           </div>
         </div>

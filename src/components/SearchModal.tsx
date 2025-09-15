@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import BiblicalLoader from './BiblicalLoader';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -58,8 +59,10 @@ export default function SearchModal({ isOpen, onClose, onSearch, searchResults, 
         <div className="space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-3 text-gray-600">Searching...</span>
+              <BiblicalLoader 
+                message="Searching scriptures..."
+                variant="minimal"
+              />
             </div>
           ) : searchResults.length > 0 ? (
             searchResults.map((result, index) => (
