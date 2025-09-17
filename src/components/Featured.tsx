@@ -28,24 +28,6 @@ export default function Featured() {
     return <VerseWallpaperCreator onBack={() => setActiveContent(null)} />;
   }
 
-  // Get today's verse
-  const dailyVerses = [
-    {
-      verse: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, to give you hope and a future.",
-      reference: "Jeremiah 29:11",
-      theme: "Hope & Future"
-    },
-    {
-      verse: "Trust in the Lord with all your heart and lean not on your own understanding.",
-      reference: "Proverbs 3:5-6",
-      theme: "Trust & Guidance"
-    }
-  ];
-
-  const today = new Date();
-  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
-  const todaysVerse = dailyVerses[dayOfYear % dailyVerses.length];
-
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 pb-12">
       {/* Modern Glass Header */}
@@ -66,35 +48,26 @@ export default function Featured() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="max-w-3xl mx-auto space-y-4">
-          {/* Today's Verse Card - Modern Glass */}
-          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold text-lg">Today's Verse</h3>
-              <button
-                onClick={() => setActiveContent('wallpaper')}
-                className="p-2 bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition-all duration-300 hover:scale-105"
-                title="Create Wallpaper"
-              >
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Verse Maker Card - Featured */}
+          <div 
+            onClick={() => setActiveContent('wallpaper')}
+            className="bg-gradient-to-br from-pink-500/20 to-purple-700/20 backdrop-blur-xl border border-pink-500/30 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-pink-500/20 group"
+          >
+            <div className="flex items-center justify-center mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-xl">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-              </button>
+              </div>
             </div>
-            <blockquote className="text-white text-base italic mb-4 leading-relaxed">
-              "{todaysVerse.verse}"
-            </blockquote>
-            <div className="flex items-center justify-between">
-              <cite className="text-gray-200 text-sm font-medium">{todaysVerse.reference}</cite>
-              <span className="text-gray-200 text-xs bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                {todaysVerse.theme}
-              </span>
+            <div className="text-center">
+              <h3 className="text-white font-bold text-lg mb-1">Verse Maker</h3>
+              <p className="text-gray-300 text-sm">Create beautiful verse wallpapers</p>
             </div>
           </div>
 
           {/* Feature Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-
             {/* Bible in a Year Card */}
             <div 
               onClick={() => setActiveContent('yearly')}

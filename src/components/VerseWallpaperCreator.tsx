@@ -1,27 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
-import { fetchTranslations, fetchVerses, Translation, Verse } from '../api/bibleClient';
+import { fetchVerses, Translation, Verse } from '../api/bibleClient';
 import { BIBLE_BOOKS } from '../config/bibleConfig';
+import bibleStructure from '../config/bible_structure.json';
 import BiblicalLoader from './BiblicalLoader';
+
+interface BibleStructure {
+  [bookId: string]: {
+    totalChapters: number;
+    chapters: {
+      [chapterNum: string]: number;
+    };
+  };
+}
+
+const structure = bibleStructure as BibleStructure;
 
 interface VerseWallpaperCreatorProps {
   onBack: () => void;
 }
-
-const defaultVerses = [
-  {
-    verse: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, to give you hope and a future.",
-    reference: "Jeremiah 29:11"
-  },
-  {
-    verse: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
-    reference: "Proverbs 3:5-6"
-  },
-  {
-    verse: "And we know that in all things God works for the good of those who love him, who have been called according to his purpose.",
-    reference: "Romans 8:28"
-  }
-];
 
 const backgroundColors = [
   { name: 'Ocean Blue', gradient: 'from-blue-600 to-blue-800' },
@@ -32,6 +29,15 @@ const backgroundColors = [
   { name: 'Deep Sea', gradient: 'from-teal-600 to-blue-900' },
   { name: 'Rose Garden', gradient: 'from-pink-500 to-rose-600' },
   { name: 'Midnight', gradient: 'from-gray-800 to-gray-900' }
+];
+
+const wallpaperImages = [
+  { name: 'Wallpaper 1', path: '/assets/wallpapers/bg1.png' },
+  { name: 'Wallpaper 2', path: '/assets/wallpapers/bg2.png' },
+  { name: 'Wallpaper 3', path: '/assets/wallpapers/bg3.png' },
+  { name: 'Wallpaper 4', path: '/assets/wallpapers/bg4.png' },
+  { name: 'Wallpaper 5', path: '/assets/wallpapers/bg5.png' },
+  { name: 'Wallpaper 6', path: '/assets/wallpapers/bg6.png' }
 ];
 
 const fontOptions = [
@@ -59,12 +65,11 @@ const fontColors = [
 ];
 
 export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorProps) {
-  const [selectedVerse, setSelectedVerse] = useState(defaultVerses[0]);
   const [customVerse, setCustomVerse] = useState('');
   const [customReference, setCustomReference] = useState('');
   const [selectedBackground, setSelectedBackground] = useState(backgroundColors[0]);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
-  const [fontSize, setFontSize] = useState(30);
+  const [fontSize, setFontSize] = useState(48);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
   const [fontFamily, setFontFamily] = useState('inter');
   const [fontColor, setFontColor] = useState('#ffffff');
@@ -78,21 +83,25 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
   const [selectedVerseNum, setSelectedVerseNum] = useState<number>(1);
   const [verses, setVerses] = useState<Verse[]>([]);
   const [loading, setLoading] = useState(false);
-  const [useApiVerse, setUseApiVerse] = useState(false);
 
   useEffect(() => {
     loadTranslations();
   }, []);
 
-  const loadTranslations = async () => {
+  const loadTranslations = () => {
     try {
-      const data = await fetchTranslations();
-      setTranslations(data);
-      if (data.length > 0) {
-        setSelectedTranslation(data[0].abbreviation);
+      const cached = localStorage.getItem('bible_cache_translations');
+      if (cached) {
+        const parsedCache = JSON.parse(cached);
+        if (parsedCache.data && Array.isArray(parsedCache.data)) {
+          setTranslations(parsedCache.data);
+          if (parsedCache.data.length > 0) {
+            setSelectedTranslation(parsedCache.data[0].shortname || parsedCache.data[0].abbreviation);
+          }
+        }
       }
     } catch (error) {
-      console.error('Failed to load translations:', error);
+      console.error('Failed to load translations from localStorage:', error);
     }
   };
 
@@ -119,6 +128,27 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
     }
   }, [selectedTranslation, selectedBook, selectedChapter]);
 
+  // Get available chapters for selected book
+  const getAvailableChapters = (bookName: string): number[] => {
+    const bookIndex = BIBLE_BOOKS.indexOf(bookName) + 1;
+    const bookData = structure[bookIndex.toString()];
+    if (!bookData || bookData.totalChapters === 0) {
+      return [];
+    }
+    return Array.from({ length: bookData.totalChapters }, (_, i) => i + 1);
+  };
+
+  // Get available verses for selected book and chapter
+  const getAvailableVerses = (bookName: string, chapter: number): number[] => {
+    const bookIndex = BIBLE_BOOKS.indexOf(bookName) + 1;
+    const bookData = structure[bookIndex.toString()];
+    if (!bookData || !bookData.chapters[chapter.toString()]) {
+      return [];
+    }
+    const verseCount = bookData.chapters[chapter.toString()];
+    return Array.from({ length: verseCount }, (_, i) => i + 1);
+  };
+
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -132,10 +162,10 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
 
   const downloadWallpaper = async () => {
     if (wallpaperRef.current) {
-      // Create a temporary full-size element for rendering
+      // Create a temporary full-size element for rendering (vertical orientation)
       const tempElement = wallpaperRef.current.cloneNode(true) as HTMLElement;
-      tempElement.style.width = '1920px';
-      tempElement.style.height = '1080px';
+      tempElement.style.width = '1080px';
+      tempElement.style.height = '1920px';
       tempElement.style.position = 'absolute';
       tempElement.style.left = '-9999px';
       tempElement.style.top = '-9999px';
@@ -154,8 +184,8 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
       document.body.appendChild(tempElement);
       
       const canvas = await html2canvas(tempElement, {
-        width: 1920,
-        height: 1080,
+        width: 1080,
+        height: 1920,
         scale: 1,
         useCORS: true,
         allowTaint: true
@@ -164,14 +194,15 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
       document.body.removeChild(tempElement);
       
       const link = document.createElement('a');
-      link.download = 'verse-wallpaper-1920x1080.png';
+      link.download = 'verse-wallpaper-1080x1920.png';
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     }
   };
 
   const shareWallpaper = async () => {
-    if (wallpaperRef.current && navigator.share) {
+    const currentVerse = getCurrentVerse();
+    if (wallpaperRef.current && navigator.share && currentVerse) {
       const canvas = await html2canvas(wallpaperRef.current, {
         width: 1080,
         height: 1920,
@@ -186,7 +217,7 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
           await navigator.share({
             files: [file],
             title: 'Bible Verse Wallpaper',
-            text: `${getCurrentVerse().reference} - ${getCurrentVerse().verse}`
+            text: `${currentVerse.reference} - ${currentVerse.verse}`
           });
         }
       });
@@ -194,7 +225,7 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
   };
 
   const getCurrentVerse = () => {
-    if (useApiVerse && verses.length > 0) {
+    if (verses.length > 0) {
       const verse = verses.find(v => v.verse === selectedVerseNum);
       if (verse) {
         return {
@@ -207,7 +238,8 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
     if (customVerse && customReference) {
       return { verse: customVerse, reference: customReference };
     }
-    return selectedVerse;
+    
+    return null;
   };
 
   const getCurrentFont = () => {
@@ -233,9 +265,20 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
         </div>
         <div className="flex space-x-2">
           <button
+            onClick={shareWallpaper}
+            className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 backdrop-blur-sm"
+            title="Share Wallpaper"
+            disabled={!getCurrentVerse()}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+            </svg>
+          </button>
+          <button
             onClick={downloadWallpaper}
             className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 backdrop-blur-sm"
             title="Download FHD Wallpaper"
+            disabled={!getCurrentVerse()}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -245,218 +288,197 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Preview at Top */}
+        {/* Preview at Top - Vertical Orientation */}
         <div className="p-4 flex justify-center bg-white/5 backdrop-blur-sm border-b border-white/10">
           <div className="relative">
             <div
               ref={wallpaperRef}
-              className={`w-80 h-45 rounded-2xl overflow-hidden shadow-2xl relative flex flex-col justify-center items-center p-6 ${
+              className={`w-48 h-80 rounded-2xl overflow-hidden shadow-2xl relative flex flex-col justify-center items-center p-6 ${
                 backgroundImage ? '' : `bg-gradient-to-br ${selectedBackground.gradient}`
               }`}
-              style={{
-                aspectRatio: '16/9',
-                ...(backgroundImage ? {
-                  backgroundImage: `url(${backgroundImage})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center'
-                } : {})
-              }}
+              style={backgroundImage ? {
+                backgroundImage: `url(${backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center'
+              } : {}}
             >
               {backgroundImage && (
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]"></div>
               )}
               
-              <div className={`relative z-10 text-${textAlign} px-4 max-w-full`} style={{ fontFamily: getCurrentFont() }}>
-                <blockquote 
-                  className="font-medium leading-relaxed mb-4 drop-shadow-lg"
-                  style={{ 
-                    fontSize: `${fontSize * 0.4}px`,
-                    color: fontColor
-                  }}
-                >
-                  "{getCurrentVerse().verse}"
-                </blockquote>
-                <cite 
-                  className="font-semibold drop-shadow-lg"
-                  style={{ 
-                    fontSize: `${fontSize * 0.3}px`,
-                    color: fontColor,
-                    opacity: 0.9
-                  }}
-                >
-                  {getCurrentVerse().reference}
-                </cite>
+              <div className={`relative z-10 text-${textAlign} px-3`} style={{ fontFamily: getCurrentFont() }}>
+                {(() => {
+                  const currentVerse = getCurrentVerse();
+                  return currentVerse ? (
+                    <>
+                      <blockquote 
+                        className="font-medium leading-relaxed mb-4 drop-shadow-lg"
+                        style={{ 
+                          fontSize: `${fontSize * 0.25}px`,
+                          color: fontColor
+                        }}
+                      >
+                        "{currentVerse.verse}"
+                      </blockquote>
+                      <cite 
+                        className="font-semibold drop-shadow-lg"
+                        style={{ 
+                          fontSize: `${fontSize * 0.2}px`,
+                          color: fontColor,
+                          opacity: 0.9
+                        }}
+                      >
+                        {currentVerse.reference}
+                      </cite>
+                    </>
+                  ) : (
+                    <div className="text-center text-white/70">
+                      <p className="text-md mb-2">Choose a verse to create your wallpaper</p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
             
+            <div className="text-center mt-2">
+              <span className="text-gray-400 text-xs">Mobile Preview (1080x1920)</span>
+            </div>
           </div>
         </div>
 
         {/* Controls Panel */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="max-w-4xl mx-auto space-y-6">
-            {/* Verse Source Toggle */}
+            {/* Verse Source - Only Bible Selection */}
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-              <h3 className="text-white font-semibold mb-3">Verse Source</h3>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setUseApiVerse(false)}
-                  className={`px-4 py-2 rounded-xl transition-all ${
-                    !useApiVerse
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
-                      : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                  }`}
+              <h3 className="text-white font-semibold mb-3">Select Verse from Bible</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <select
+                  value={selectedTranslation}
+                  onChange={(e) => setSelectedTranslation(e.target.value)}
+                  className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
                 >
-                  Default Verses
-                </button>
-                <button
-                  onClick={() => setUseApiVerse(true)}
-                  className={`px-4 py-2 rounded-xl transition-all ${
-                    useApiVerse
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'
-                      : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                  }`}
-                >
-                  Choose from Bible
-                </button>
-              </div>
-            </div>
-
-            {/* API Verse Selection */}
-            {useApiVerse && (
-              <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-                <h3 className="text-white font-semibold mb-3">Select Verse</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <select
-                    value={selectedTranslation}
-                    onChange={(e) => setSelectedTranslation(e.target.value)}
-                    className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
-                  >
-                    {translations.map((t) => (
-                      <option key={t._id} value={t.abbreviation} className="bg-gray-800">
-                        {t.abbreviation}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <select
-                    value={selectedBook}
-                    onChange={(e) => setSelectedBook(e.target.value)}
-                    className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
-                  >
-                    <option value="" className="bg-gray-800">Select Book</option>
-                    {BIBLE_BOOKS.map((book) => (
-                      <option key={book} value={book} className="bg-gray-800">
-                        {book}
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <input
-                    type="number"
-                    min="1"
-                    value={selectedChapter}
-                    onChange={(e) => setSelectedChapter(Number(e.target.value))}
-                    placeholder="Chapter"
-                    className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
-                  />
-                  
-                  <select
-                    value={selectedVerseNum}
-                    onChange={(e) => setSelectedVerseNum(Number(e.target.value))}
-                    className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
-                    disabled={verses.length === 0}
-                  >
-                    {verses.map((verse) => (
-                      <option key={verse._id} value={verse.verse} className="bg-gray-800">
-                        Verse {verse.verse}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {loading && (
-                  <div className="flex items-center justify-center mt-4">
-                    <BiblicalLoader 
-                      message="Loading verses..."
-                      size="sm"
-                      variant="minimal"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Default Verse Selection */}
-            {!useApiVerse && (
-              <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-                <h3 className="text-white font-semibold mb-3">Select Verse</h3>
-                <div className="space-y-2">
-                  {defaultVerses.map((verse, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setSelectedVerse(verse);
-                        setCustomVerse('');
-                        setCustomReference('');
-                      }}
-                      className={`w-full text-left p-3 rounded-xl transition-all ${
-                        selectedVerse === verse && !customVerse
-                          ? 'bg-gradient-to-r from-pink-500/20 to-purple-600/20 border border-pink-500/50 text-white'
-                          : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'
-                      }`}
-                    >
-                      <div className="text-sm font-medium">{verse.reference}</div>
-                      <div className="text-xs opacity-75 line-clamp-2">{verse.verse}</div>
-                    </button>
+                  <option value="" className="bg-gray-800">Select Translation</option>
+                  {translations.map((t) => (
+                    <option key={t._id} value={t.shortname || t.abbreviation} className="bg-gray-800">
+                      {t.shortname || t.abbreviation}
+                    </option>
                   ))}
+                </select>
+                
+                <select
+                  value={selectedBook}
+                  onChange={(e) => {
+                    setSelectedBook(e.target.value);
+                    setSelectedChapter(1);
+                    setSelectedVerseNum(1);
+                  }}
+                  className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
+                >
+                  <option value="" className="bg-gray-800">Select Book</option>
+                  {BIBLE_BOOKS.map((book) => (
+                    <option key={book} value={book} className="bg-gray-800">
+                      {book}
+                    </option>
+                  ))}
+                </select>
+                
+                <select
+                  value={selectedChapter}
+                  onChange={(e) => {
+                    setSelectedChapter(Number(e.target.value));
+                    setSelectedVerseNum(1);
+                  }}
+                  className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
+                  disabled={!selectedBook}
+                >
+                  <option value={0} className="bg-gray-800">Select Chapter</option>
+                  {selectedBook && getAvailableChapters(selectedBook).map((chapter) => (
+                    <option key={chapter} value={chapter} className="bg-gray-800">
+                      Chapter {chapter}
+                    </option>
+                  ))}
+                </select>
+                
+                <select
+                  value={selectedVerseNum}
+                  onChange={(e) => setSelectedVerseNum(Number(e.target.value))}
+                  className="bg-white/10 text-white rounded-xl p-3 border border-white/20 focus:border-pink-500 focus:outline-none"
+                  disabled={!selectedBook || !selectedChapter}
+                >
+                  <option value={0} className="bg-gray-800">Select Verse</option>
+                  {selectedBook && selectedChapter && getAvailableVerses(selectedBook, selectedChapter).map((verse) => (
+                    <option key={verse} value={verse} className="bg-gray-800">
+                      Verse {verse}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {loading && (
+                <div className="flex items-center justify-center mt-4">
+                  <BiblicalLoader 
+                    message="Loading verses..."
+                    size="sm"
+                    variant="minimal"
+                  />
                 </div>
-              </div>
-            )}
-
-            {/* Custom Verse */}
-            {!useApiVerse && (
-              <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
-                <h3 className="text-white font-semibold mb-3">Custom Verse</h3>
-                <textarea
-                  value={customVerse}
-                  onChange={(e) => setCustomVerse(e.target.value)}
-                  placeholder="Enter your verse..."
-                  className="w-full p-3 bg-white/10 text-white rounded-xl resize-none h-24 text-sm border border-white/20 focus:border-pink-500 focus:outline-none"
-                />
-                <input
-                  type="text"
-                  value={customReference}
-                  onChange={(e) => setCustomReference(e.target.value)}
-                  placeholder="Reference (e.g., John 3:16)"
-                  className="w-full p-3 bg-white/10 text-white rounded-xl mt-2 text-sm border border-white/20 focus:border-pink-500 focus:outline-none"
-                />
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Background Options */}
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
               <h3 className="text-white font-semibold mb-3">Background</h3>
-              <div className="grid grid-cols-4 gap-2 mb-4">
-                {backgroundColors.map((bg, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setSelectedBackground(bg);
-                      setBackgroundImage(null);
-                    }}
-                    className={`h-12 rounded-xl bg-gradient-to-r ${bg.gradient} border-2 transition-all ${
-                      selectedBackground === bg && !backgroundImage
-                        ? 'border-white shadow-lg scale-105'
-                        : 'border-transparent hover:border-white/50'
-                    }`}
-                    title={bg.name}
-                  />
-                ))}
+              
+              {/* Gradient Colors */}
+              <div className="mb-4">
+                <h4 className="text-sm text-gray-300 mb-2">Gradient Colors</h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {backgroundColors.map((bg, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedBackground(bg);
+                        setBackgroundImage(null);
+                      }}
+                      className={`h-12 rounded-xl bg-gradient-to-r ${bg.gradient} border-2 transition-all ${
+                        selectedBackground === bg && !backgroundImage
+                          ? 'border-white shadow-lg scale-105'
+                          : 'border-transparent hover:border-white/50'
+                      }`}
+                      title={bg.name}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Wallpaper Images */}
+              <div className="mb-4">
+                <h4 className="text-sm text-gray-300 mb-2">Wallpaper Images</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  {wallpaperImages.map((wallpaper, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setBackgroundImage(wallpaper.path)}
+                      className={`h-16 rounded-xl border-2 transition-all overflow-hidden ${
+                        backgroundImage === wallpaper.path
+                          ? 'border-white shadow-lg scale-105'
+                          : 'border-transparent hover:border-white/50'
+                      }`}
+                      title={wallpaper.name}
+                      style={{
+                        backgroundImage: `url(${wallpaper.path})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
               
+              {/* Custom Image Upload */}
               <label className="block">
-                <span className="text-sm text-gray-300 mb-2 block">Upload Image</span>
+                <span className="text-sm text-gray-300 mb-2 block">Upload Custom Image</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -474,8 +496,8 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
                   <label className="text-sm text-gray-300 block mb-2">Font Size</label>
                   <input
                     type="range"
-                    min="30"
-                    max="60"
+                    min="40"
+                    max="90"
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
                     className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
