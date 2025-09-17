@@ -44,7 +44,7 @@ export default function ActionSheet({
   onChapterSelect,
   loading
 }: ActionSheetProps) {
-  const [expandedBook, setExpandedBook] = useState<string>(selectedBook);
+  const [expandedBook, setExpandedBook] = useState<string>('');
   const [bookOrder, setBookOrder] = useState<'traditional' | 'alphabetical'>('traditional');
 
   if (!isOpen) return null;
@@ -75,12 +75,10 @@ export default function ActionSheet({
       setExpandedBook('');
     } else {
       setExpandedBook(book);
-      // Remove automatic book change - only expand/collapse
     }
   };
 
   const handleChapterClick = (chapter: number) => {
-    // Only change book when chapter is selected
     onBookChange(expandedBook);
     onChapterSelect(chapter);
     onClose();
@@ -108,7 +106,7 @@ export default function ActionSheet({
           <select
             value={selectedTranslation}
             onChange={(e) => onTranslationChange(e.target.value)}
-            className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer"
+            className="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">Select Translation</option>
             {translations.map((translation) => (
@@ -146,7 +144,7 @@ export default function ActionSheet({
 
                 {/* Chapter Grid */}
                 {expandedBook === book && (
-                  <div className="pb-4 px-2 animate-in slide-in-from-top-2 duration-200">
+                  <div className="pb-4 px-2">
                     <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 mt-3">
                       {getAvailableChapters(book).map((chapter) => (
                         <button

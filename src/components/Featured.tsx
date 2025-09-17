@@ -93,41 +93,7 @@ export default function Featured() {
 
           {/* Feature Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Daily Bible Verse Card */}
-            <div 
-              onClick={() => setActiveContent('daily')}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl group"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Daily Bible Verse</h3>
-                  <p className="text-gray-400 text-sm">Daily inspiration</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Verse Wallpaper Creator Card */}
-            <div 
-              onClick={() => setActiveContent('wallpaper')}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl group"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="00 00 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Verse Wallpaper</h3>
-                  <p className="text-gray-400 text-sm">Create & share</p>
-                </div>
-              </div>
-            </div>
 
             {/* Bible in a Year Card */}
             <div 

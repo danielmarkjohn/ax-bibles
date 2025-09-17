@@ -65,6 +65,7 @@ export default function BibleReader({ }: BibleReaderProps) {
   const [showSettings, setShowSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showFirstTimeSetup, setShowFirstTimeSetup] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Verse[]>([]);
@@ -130,8 +131,11 @@ export default function BibleReader({ }: BibleReaderProps) {
     localStorage.setItem('bible_bookmarks', JSON.stringify(bookmarks));
   }, [bookmarks]);
 
-  // Text selection handling
+  // Text selection handling with better mobile support
   const handleTextSelection = useCallback(() => {
+    // Prevent text selection issues on mobile Safari
+    if (window.innerWidth < 768) return;
+    
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
       const range = selection.getRangeAt(0);
@@ -210,22 +214,22 @@ export default function BibleReader({ }: BibleReaderProps) {
     }
   };
 
-  // Navigation functions
-  const goToPreviousChapter = () => {
+  // Navigation functions with better mobile handling
+  const goToPreviousChapter = useCallback(() => {
     if (selectedChapter > 1 && !isAnimating) {
       setIsAnimating(true);
       setAnimationDirection('left');
       setSelectedChapter(selectedChapter - 1);
     }
-  };
+  }, [selectedChapter, isAnimating]);
 
-  const goToNextChapter = () => {
+  const goToNextChapter = useCallback(() => {
     if (selectedChapter < availableChapters.length && !isAnimating) {
       setIsAnimating(true);
       setAnimationDirection('right');
       setSelectedChapter(selectedChapter + 1);
     }
-  };
+  }, [selectedChapter, availableChapters.length, isAnimating]);
 
   // Font options
   const fontOptions = [
@@ -416,8 +420,30 @@ export default function BibleReader({ }: BibleReaderProps) {
     }
   }, [verses]);
 
+  // Check for first-time user
+  useEffect(() => {
+    const hasUsedBefore = localStorage.getItem('bible_reader_used');
+    if (!hasUsedBefore) {
+      setShowFirstTimeSetup(true);
+    }
+  }, []);
+
+  const handleFirstTimeSetup = (translation: string, book: string, chapter: number) => {
+    setSelectedTranslation(translation);
+    setSelectedBook(book);
+    setSelectedChapter(chapter);
+    setShowFirstTimeSetup(false);
+    localStorage.setItem('bible_reader_used', 'true');
+  };
+
   return (
-    <div className={`h-full flex flex-col bg-gray-900 text-gray-100 ${readerSettings.fullscreen ? 'fixed inset-0 z-50' : ''}`}>
+    <div 
+      className={`h-full flex flex-col bg-gray-900 text-gray-100 ${readerSettings.fullscreen ? 'fixed inset-0 z-50' : ''}`}
+      style={{
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain'
+      }}
+    >
       {/* Modern Header */}
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 backdrop-blur-sm px-4 py-4 flex items-center justify-between border-b border-gray-700/50 shadow-lg flex-shrink-0">
         <div className="flex items-center space-x-4 flex-1">
@@ -487,33 +513,50 @@ export default function BibleReader({ }: BibleReaderProps) {
       <div className="flex-1 overflow-y-auto" style={readerStyles}>
         {verses.length > 0 ? (
           <div className="relative">
-            {/* Navigation Arrows */}
+            {/* Navigation Arrows - Improved for mobile */}
             <button
               onClick={goToPreviousChapter}
+              onTouchStart={(e) => e.currentTarget.style.opacity = '1'}
+              onTouchEnd={(e) => e.currentTarget.style.opacity = '0.5'}
               disabled={selectedChapter <= 1}
-              className="fixed left-4 top-1/2 transform -translate-y-1/2 z-10 w-10 h-10 bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-700/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg"
+              className="fixed left-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-700/80 disabled:opacity-20 disabled:cursor-not-allowed transition-all shadow-lg opacity-50 hover:opacity-100 active:opacity-100 active:scale-95"
+              style={{ 
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
+              }}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
 
             <button
               onClick={goToNextChapter}
+              onTouchStart={(e) => e.currentTarget.style.opacity = '1'}
+              onTouchEnd={(e) => e.currentTarget.style.opacity = '0.5'}
               disabled={selectedChapter >= availableChapters.length}
-              className="fixed right-4 top-1/2 transform -translate-y-1/2 z-10 w-10 h-10 bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-700/80 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg"
+              className="fixed right-4 top-1/2 transform -translate-y-1/2 z-10 w-12 h-12 bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-300 hover:text-white hover:bg-gray-700/80 disabled:opacity-20 disabled:cursor-not-allowed transition-all shadow-lg opacity-50 hover:opacity-100 active:opacity-100 active:scale-95"
+              style={{ 
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
+              }}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
 
-            {/* Verses */}
+            {/* Verses - Improved for mobile Safari */}
             <div
               ref={readerRef}
               onMouseUp={handleTextSelection}
               className={`max-w-4xl mx-auto px-6 py-8 space-y-4 ${readerSettings.columnLayout ? 'columns-2 gap-8' : ''
                 }`}
+              style={{
+                WebkitTouchCallout: 'none',
+                WebkitUserSelect: window.innerWidth < 768 ? 'none' : 'text',
+                userSelect: window.innerWidth < 768 ? 'none' : 'text'
+              }}
             >
               {verses.map((verse, index) => {
                 const highlight = highlights.find(h => h.verseId === verse._id);
@@ -534,7 +577,13 @@ export default function BibleReader({ }: BibleReaderProps) {
                       border: `1px solid ${highlight.color}80`
                     } : {}}
                   >
-                    <p className="select-text" style={{ lineHeight: readerSettings.lineHeight }}>
+                    <p 
+                      className="select-text" 
+                      style={{ 
+                        lineHeight: readerSettings.lineHeight,
+                        WebkitTouchCallout: window.innerWidth < 768 ? 'none' : 'default'
+                      }}
+                    >
                       {readerSettings.showVerseNumbers && (
                         <sup className="text-sm mr-2 font-medium opacity-70 select-none">
                           {verse.verse}
@@ -549,6 +598,10 @@ export default function BibleReader({ }: BibleReaderProps) {
                           ? 'text-yellow-500 opacity-100'
                           : 'text-gray-400 hover:text-yellow-500'
                         }`}
+                      style={{ 
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation'
+                      }}
                       title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
                     >
                       <svg className="w-4 h-4" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
@@ -646,6 +699,93 @@ export default function BibleReader({ }: BibleReaderProps) {
         onBookmarkClick={navigateToBookmark}
         onDeleteBookmark={deleteBookmark}
       />
+
+      {/* First Time Setup Modal */}
+      {showFirstTimeSetup && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Welcome to Bible Reader</h2>
+              <p className="text-gray-400 text-sm">Choose your preferred translation and starting point</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-gray-300 block mb-2">Translation</label>
+                <select
+                  value={selectedTranslation}
+                  onChange={(e) => setSelectedTranslation(e.target.value)}
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Translation</option>
+                  {translations.map((translation) => (
+                    <option key={translation._id} value={String(translation.module || '')}>
+                      {translation.abbreviation} - {translation.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-300 block mb-2">Book</label>
+                <select
+                  value={selectedBook}
+                  onChange={(e) => setSelectedBook(e.target.value)}
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Book</option>
+                  {BIBLE_BOOKS.map((book) => (
+                    <option key={book} value={book}>
+                      {book}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-300 block mb-2">Chapter</label>
+                <select
+                  value={selectedChapter}
+                  onChange={(e) => setSelectedChapter(Number(e.target.value))}
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!selectedBook}
+                >
+                  <option value={0}>Select Chapter</option>
+                  {selectedBook && getAvailableChapters(selectedBook).map((chapter) => (
+                    <option key={chapter} value={chapter}>
+                      Chapter {chapter}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowFirstTimeSetup(false);
+                  localStorage.setItem('bible_reader_used', 'true');
+                }}
+                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors"
+              >
+                Skip
+              </button>
+              <button
+                onClick={() => handleFirstTimeSetup(selectedTranslation, selectedBook, selectedChapter)}
+                disabled={!selectedTranslation || !selectedBook || selectedChapter === 0}
+                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+              >
+                Start Reading
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
