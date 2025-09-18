@@ -66,6 +66,9 @@ export default function BibleReader({ }: BibleReaderProps) {
   const [showSearch, setShowSearch] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [showFirstTimeSetup, setShowFirstTimeSetup] = useState(false);
+  const [showChapterDropdown, setShowChapterDropdown] = useState(false);
+  const [showChapterModal, setShowChapterModal] = useState(false);
+  const [showBookModal, setShowBookModal] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Verse[]>([]);
@@ -436,6 +439,18 @@ export default function BibleReader({ }: BibleReaderProps) {
     localStorage.setItem('bible_reader_used', 'true');
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showChapterDropdown && !(event.target as Element).closest('.relative')) {
+        setShowChapterDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showChapterDropdown]);
+
   return (
     <div 
       className={`h-full flex flex-col bg-gray-900 text-gray-100 ${readerSettings.fullscreen ? 'fixed inset-0 z-50' : ''}`}
@@ -448,21 +463,56 @@ export default function BibleReader({ }: BibleReaderProps) {
       <div className="bg-gradient-to-r from-gray-800 to-gray-900 backdrop-blur-sm px-4 py-4 flex items-center justify-between border-b border-gray-700/50 shadow-lg flex-shrink-0">
         <div className="flex items-center space-x-4 flex-1">
           <div className="flex flex-col">
-            <div className="text-white font-semibold text-lg">
-              {selectedBook || 'Select Book'}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowBookModal(true)}
+                className="flex items-center space-x-1 text-white hover:text-gray-300 transition-colors"
+              >
+                <div className="font-semibold text-lg">
+                  {selectedBook || 'Select Book'}
+                </div>
+                <svg 
+                  className="w-4 h-4 flex-shrink-0" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
             </div>
-            {selectedChapter > 0 && selectedTranslation && (
-              <div className="text-gray-300 text-sm flex items-center">
-                {loading.verses ? (
-                  <>
-                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-400 border-t-blue-400 mr-2"></div>
-                    Loading Chapter {selectedChapter}...
-                  </>
-                ) : (
-                  <>Chapter {selectedChapter} ({selectedTranslation.toUpperCase()})</>
-                )}
-              </div>
-            )}
+            <div className="flex items-center space-x-4">
+              {loading.verses ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-400 border-t-blue-400 mr-2"></div>
+                  <span className="text-gray-300 text-sm">Loading...</span>
+                </div>
+              ) : (
+                <>
+                  {selectedTranslation && (
+                    <div className="text-gray-300 text-sm">
+                      ({selectedTranslation.toUpperCase()})
+                    </div>
+                  )}
+                  {selectedChapter > 0 && selectedTranslation && (
+                    <button
+                      onClick={() => setShowChapterModal(true)}
+                      className="flex items-center space-x-1 text-gray-300 hover:text-white transition-colors"
+                    >
+                      <span className="text-sm">Chapter {selectedChapter}</span>
+                      <svg 
+                        className="w-4 h-4" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
         
@@ -470,42 +520,39 @@ export default function BibleReader({ }: BibleReaderProps) {
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowActionSheet(true)}
-            className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 hover:scale-105"
-            title="Menu"
+            className="p-2 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 backdrop-blur-sm"
+            title="Select Book & Chapter"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </button>
-          
-          {/* Search button */}
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-2 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 backdrop-blur-sm"
+            title="Settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
           <button
             onClick={() => setShowSearch(true)}
-            className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 hover:scale-105"
+            className="p-2 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 backdrop-blur-sm"
             title="Search"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </button>
-          
           <button
             onClick={() => setShowNotes(true)}
-            className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 hover:scale-105"
+            className="p-2 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 backdrop-blur-sm"
             title="Bookmarks"
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z" />
-            </svg>
-          </button>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 hover:scale-105"
-            title="Settings"
-          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
             </svg>
           </button>
         </div>
@@ -784,6 +831,122 @@ export default function BibleReader({ }: BibleReaderProps) {
               >
                 Start Reading
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Book Selection Modal */}
+      {showBookModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full border border-gray-700 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Select Book</h2>
+              <button
+                onClick={() => setShowBookModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                    <span className="w-3 h-3 bg-purple-500 rounded-full mr-3"></span>
+                    Old Testament
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {BIBLE_BOOKS.slice(0, 39).map((book) => (
+                      <button
+                        key={book}
+                        onClick={() => {
+                          setSelectedBook(book);
+                          setShowBookModal(false);
+                        }}
+                        className={`p-3 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 text-left ${
+                          selectedBook === book
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-gray-700 hover:bg-blue-600 text-white'
+                        }`}
+                      >
+                        {book}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                    <span className="w-3 h-3 bg-emerald-500 rounded-full mr-3"></span>
+                    New Testament
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {BIBLE_BOOKS.slice(39).map((book) => (
+                      <button
+                        key={book}
+                        onClick={() => {
+                          setSelectedBook(book);
+                          setShowBookModal(false);
+                        }}
+                        className={`p-3 text-sm rounded-lg transition-all hover:scale-105 active:scale-95 text-left ${
+                          selectedBook === book
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-gray-700 hover:bg-blue-600 text-white'
+                        }`}
+                      >
+                        {book}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chapter Selection Modal */}
+      {showChapterModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white">Select Chapter</h2>
+              <button
+                onClick={() => setShowChapterModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-white mb-2">{selectedBook}</h3>
+              <p className="text-gray-400 text-sm">Choose a chapter to read</p>
+            </div>
+
+            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
+              {availableChapters.map((chapter) => (
+                <button
+                  key={chapter}
+                  onClick={() => {
+                    handleChapterSelect(chapter);
+                    setShowChapterModal(false);
+                  }}
+                  className={`aspect-square rounded-lg flex items-center justify-center text-sm font-medium transition-all hover:scale-105 active:scale-95 ${
+                    selectedChapter === chapter
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-gray-700 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {chapter}
+                </button>
+              ))}
             </div>
           </div>
         </div>
