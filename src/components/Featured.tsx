@@ -1,125 +1,119 @@
 import React, { useState } from 'react';
 import DailyVerse from './DailyVerse';
-import BibleInAYear from './BibleInAYear';
-import BibleOverview from './BibleOverview';
-import ChristianGlossary from './ChristianGlossary';
-import VerseWallpaperCreator from './VerseWallpaperCreator';
+import BibleStudies from './BibleStudies';
+
+const dailyVerses = [
+  {
+    verse: "For I know the plans I have for you, declares the Lord, plans to prosper you and not to harm you, to give you hope and a future.",
+    reference: "Jeremiah 29:11",
+    theme: "Hope & Future",
+    devotion: "God's plans for us are always good, even when we can't see the bigger picture. In times of uncertainty, we can trust that He is working all things together for our benefit. His plans are not to harm us but to give us hope and a future filled with His blessings.",
+    author: "Pastor John Smith"
+  },
+  {
+    verse: "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
+    reference: "Proverbs 3:5-6",
+    theme: "Trust & Guidance",
+    devotion: "True wisdom comes from acknowledging that our understanding is limited. When we trust God completely and seek His will in all our decisions, He promises to guide our steps and make our paths clear. This requires humility and faith in His perfect wisdom.",
+    author: "Pastor Sarah Johnson"
+  },
+  {
+    verse: "And we know that in all things God works for the good of those who love him, who have been called according to his purpose.",
+    reference: "Romans 8:28",
+    theme: "God's Purpose",
+    devotion: "Even in our darkest moments, God is at work. This verse doesn't promise that all things are good, but that God works through all circumstances - both joyful and painful - to accomplish His good purposes in our lives. Our trials are not wasted when we love and trust Him.",
+    author: "Pastor Michael Davis"
+  }
+];
 
 export default function Featured() {
-  const [activeContent, setActiveContent] = useState<'daily' | 'yearly' | 'overview' | 'glossary' | 'wallpaper' | null>(null);
+  const [activeContent, setActiveContent] = useState<'daily' | 'studies' | null>(null);
 
   if (activeContent === 'daily') {
     return <DailyVerse onBack={() => setActiveContent(null)} />;
   }
 
-  if (activeContent === 'yearly') {
-    return <BibleInAYear onBack={() => setActiveContent(null)} />;
+  if (activeContent === 'studies') {
+    return <BibleStudies onBack={() => setActiveContent(null)} />;
   }
 
-  if (activeContent === 'overview') {
-    return <BibleOverview onBack={() => setActiveContent(null)} />;
-  }
-
-  if (activeContent === 'glossary') {
-    return <ChristianGlossary onBack={() => setActiveContent(null)} />;
-  }
-
-  if (activeContent === 'wallpaper') {
-    return <VerseWallpaperCreator onBack={() => setActiveContent(null)} />;
-  }
+  // Get today's verse
+  const today = new Date();
+  const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
+  const todaysVerse = dailyVerses[dayOfYear % dailyVerses.length];
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 pb-12">
-      {/* Modern Glass Header */}
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 px-6 py-6 flex items-center justify-between shadow-2xl flex-shrink-0">
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl">
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-white font-bold text-xl">Featured</span>
-            <span className="text-gray-300 text-sm">Discover daily inspiration</span>
-          </div>
-        </div>
-      </div>
-
+    <div className="h-full flex flex-col bg-gray-900 text-gray-100">
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-3xl mx-auto space-y-4">
-          {/* Verse Maker Card - Featured */}
-          <div 
-            onClick={() => setActiveContent('wallpaper')}
-            className="bg-gradient-to-br from-pink-500/20 to-purple-700/20 backdrop-blur-xl border border-pink-500/30 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-pink-500/20 group"
-          >
-            <div className="flex items-center justify-center mb-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-xl">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-            </div>
-            <div className="text-center">
-              <h3 className="text-white font-bold text-lg mb-1">Verse Maker</h3>
-              <p className="text-gray-300 text-sm">Create beautiful verse wallpapers</p>
-            </div>
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* Today's Date */}
+          <div className="text-center mb-6">
+            <p className="text-gray-400">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
 
-          {/* Feature Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Bible in a Year Card */}
-            <div 
-              onClick={() => setActiveContent('yearly')}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl group"
-            >
+          {/* Daily Devotion Preview Card */}
+          <div 
+            onClick={() => setActiveContent('daily')}
+            className="bg-gradient-to-br from-blue-500/20 to-indigo-700/20 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-blue-500/20 group"
+          >
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold">Bible in a Year</h3>
-                  <p className="text-gray-400 text-sm">Reading plan</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Bible Overview Card */}
-            <div 
-              onClick={() => setActiveContent('overview')}
-              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl group"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-xl">
                   <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold">Bible Overview</h3>
-                  <p className="text-gray-400 text-sm">Explore books</p>
+                  <h2 className="text-xl font-bold text-white">Today's Devotion</h2>
+                  <p className="text-blue-200 text-sm">{todaysVerse.theme}</p>
                 </div>
               </div>
+              <svg className="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+            
+            <blockquote className="text-white/90 italic mb-3 leading-relaxed">
+              "{todaysVerse.verse}"
+            </blockquote>
+            
+            <div className="flex items-center justify-between">
+              <cite className="text-blue-200 font-medium text-sm">
+                {todaysVerse.reference}
+              </cite>
+              <span className="text-blue-300 text-xs">
+                by {todaysVerse.author}
+              </span>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-blue-500/20">
+              <p className="text-blue-100 text-sm opacity-80">
+                Tap to read the full devotion and reflection
+              </p>
             </div>
           </div>
 
-          {/* Christian Glossary Card - Full Width */}
+          {/* Bible Studies Card */}
           <div 
-            onClick={() => setActiveContent('glossary')}
-            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl group"
+            onClick={() => setActiveContent('studies')}
+            className="bg-gradient-to-br from-purple-500/20 to-pink-700/20 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-4 cursor-pointer transform hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-purple-500/20 group"
           >
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2zM12 15.4l3.76 2.27 1-4.28 3.32-2.88-4.38-.38L12 6.1l-1.71 4.04-4.38.38 3.32 2.88 1 4.28L12 15.4z"/>
-                </svg>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Bible Studies</h3>
+                  <p className="text-purple-200 text-sm">Reading plans, overviews, glossary & wallpapers</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-white font-semibold">Christian Glossary</h3>
-                <p className="text-gray-400 text-sm">Learn biblical terms</p>
-              </div>
+              <svg className="w-5 h-5 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </div>
           </div>
         </div>

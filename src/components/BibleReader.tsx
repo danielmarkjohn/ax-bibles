@@ -77,9 +77,9 @@ export default function BibleReader({ }: BibleReaderProps) {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
 
   const [readerSettings, setReaderSettings] = useState<ReaderSettings>({
-    fontSize: 18,
-    fontFamily: 'inter',
-    lineHeight: 1.6,
+    fontSize: 16,
+    fontFamily: 'times',
+    lineHeight: 1.4,
     theme: 'light',
     highlightColor: '#ffeb3b',
     showVerseNumbers: true,
@@ -452,8 +452,15 @@ export default function BibleReader({ }: BibleReaderProps) {
               {selectedBook || 'Select Book'}
             </div>
             {selectedChapter > 0 && selectedTranslation && (
-              <div className="text-gray-300 text-sm">
-                Chapter {selectedChapter} ({selectedTranslation.toUpperCase()})
+              <div className="text-gray-300 text-sm flex items-center">
+                {loading.verses ? (
+                  <>
+                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-400 border-t-blue-400 mr-2"></div>
+                    Loading Chapter {selectedChapter}...
+                  </>
+                ) : (
+                  <>Chapter {selectedChapter} ({selectedTranslation.toUpperCase()})</>
+                )}
               </div>
             )}
           </div>
@@ -471,20 +478,15 @@ export default function BibleReader({ }: BibleReaderProps) {
             </svg>
           </button>
           
-          {/* Search button with loading state */}
+          {/* Search button */}
           <button
             onClick={() => setShowSearch(true)}
             className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-700/50 rounded-xl transition-all duration-200 hover:scale-105"
             title="Search"
-            disabled={loading.verses}
           >
-            {loading.verses ? (
-              <div className="w-5 h-5 animate-spin rounded-full border-2 border-gray-400 border-t-blue-400"></div>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            )}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </button>
           
           <button

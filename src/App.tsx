@@ -3,7 +3,7 @@ import BibleReader from './components/BibleReader';
 import Featured from './components/Featured';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'bible' | 'featured'>('bible');
+  const [activeTab, setActiveTab] = useState<'bible' | 'featured'>('featured');
 
   return (
     <div className="bg-gray-900 min-h-screen flex flex-col">
