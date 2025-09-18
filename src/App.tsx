@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 import BibleReader from './components/BibleReader';
 import Featured from './components/Featured';
 import AdminPanel from './components/AdminPanel';
+import VerseWallpaperCreator from './components/VerseWallpaperCreator';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'bible' | 'featured' | 'admin'>('featured');
+  const [showWallpaperCreator, setShowWallpaperCreator] = useState(false);
+
+  const handleNavigateToWallpaper = () => {
+    setActiveTab('featured');
+    setShowWallpaperCreator(true);
+    window.history.pushState({}, '', '/');
+  };
 
   useEffect(() => {
     // Check URL path on mount and handle routing
@@ -53,7 +61,13 @@ export default function App() {
     <div className="bg-gray-900 min-h-screen flex flex-col">
       {/* Main Content */}
       <main className="flex-1 overflow-hidden">
-        {activeTab === 'bible' ? <BibleReader /> : <Featured />}
+        {activeTab === 'bible' ? (
+          <BibleReader onNavigateToWallpaper={handleNavigateToWallpaper} />
+        ) : showWallpaperCreator ? (
+          <VerseWallpaperCreator onBack={() => setShowWallpaperCreator(false)} />
+        ) : (
+          <Featured />
+        )}
       </main>
 
       {/* Bottom Navigation - Small & Elegant */}

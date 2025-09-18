@@ -21,7 +21,9 @@ interface BibleStructure {
   };
 }
 
-interface BibleReaderProps { }
+interface BibleReaderProps { 
+  onNavigateToWallpaper?: () => void;
+}
 
 interface ReaderSettings {
   fontSize: number;
@@ -50,7 +52,7 @@ interface Bookmark {
   note?: string;
 }
 
-export default function BibleReader({ }: BibleReaderProps) {
+export default function BibleReader({ onNavigateToWallpaper }: BibleReaderProps) {
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [verses, setVerses] = useState<Verse[]>([]);
 
@@ -78,6 +80,8 @@ export default function BibleReader({ }: BibleReaderProps) {
   const [selectedText, setSelectedText] = useState('');
   const [showTextMenu, setShowTextMenu] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [showVerseMenu, setShowVerseMenu] = useState(false);
+  const [selectedVerseForMenu, setSelectedVerseForMenu] = useState<Verse | null>(null);
 
   const [readerSettings, setReaderSettings] = useState<ReaderSettings>({
     fontSize: 16,
@@ -102,6 +106,68 @@ export default function BibleReader({ }: BibleReaderProps) {
   // Add animation state
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationDirection, setAnimationDirection] = useState<'left' | 'right'>('right');
+
+  // Long press handling for verses
+  const [longPressTimer, setLongPressTimer] = useState<any>(null);
+
+  const handleVerseMouseDown = (verse: Verse, event: React.MouseEvent) => {
+    const timer = setTimeout(() => {
+      setSelectedVerseForMenu(verse);
+      setMenuPosition({ x: event.clientX, y: event.clientY });
+      setShowVerseMenu(true);
+    }, 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleVerseMouseUp = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const handleVerseMouseLeave = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  // Touch events for mobile
+  const handleVerseTouchStart = (verse: Verse, event: React.TouchEvent) => {
+    const touch = event.touches[0];
+    const timer = setTimeout(() => {
+      setSelectedVerseForMenu(verse);
+      setMenuPosition({ x: touch.clientX, y: touch.clientY });
+      setShowVerseMenu(true);
+    }, 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleVerseTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+
+  const navigateToVerseWallpaper = () => {
+    if (selectedVerseForMenu) {
+      // Store verse data for wallpaper creator
+      const verseData = {
+        verse: selectedVerseForMenu.text,
+        reference: `${selectedBook} ${selectedChapter}:${selectedVerseForMenu.verse}`,
+        translation: selectedTranslation
+      };
+      localStorage.setItem('selectedVerseForWallpaper', JSON.stringify(verseData));
+      
+      // Navigate to wallpaper creator
+      if (onNavigateToWallpaper) {
+        onNavigateToWallpaper();
+      }
+    }
+    setShowVerseMenu(false);
+  };
 
   // Load settings from localStorage
   useEffect(() => {
@@ -451,6 +517,18 @@ export default function BibleReader({ }: BibleReaderProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showChapterDropdown]);
 
+  // Close verse menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showVerseMenu && !(event.target as Element).closest('.fixed')) {
+        setShowVerseMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showVerseMenu]);
+
   return (
     <div 
       className={`h-full flex flex-col bg-gray-900 text-gray-100 ${readerSettings.fullscreen ? 'fixed inset-0 z-50' : ''}`}
@@ -599,7 +677,7 @@ export default function BibleReader({ }: BibleReaderProps) {
             <div
               ref={readerRef}
               onMouseUp={handleTextSelection}
-              className={`max-w-4xl mx-auto px-6 py-8 space-y-4 ${readerSettings.columnLayout ? 'columns-2 gap-8' : ''
+              className={`max-w-4xl mx-auto px-6 py-8 space-y-2 ${readerSettings.columnLayout ? 'columns-2 gap-8' : ''
                 }`}
               style={{
                 WebkitTouchCallout: 'none',
@@ -620,11 +698,16 @@ export default function BibleReader({ }: BibleReaderProps) {
                   <div
                     key={verse._id}
                     data-verse-id={verse._id}
-                    className="group relative leading-relaxed break-inside-avoid mb-4 p-3 rounded-lg transition-all"
+                    className="group relative leading-relaxed break-inside-avoid mb-2 p-3 rounded-lg transition-all cursor-pointer select-none"
                     style={highlight ? {
                       backgroundColor: highlight.color,
                       border: `1px solid ${highlight.color}80`
                     } : {}}
+                    onMouseDown={(e) => handleVerseMouseDown(verse, e)}
+                    onMouseUp={handleVerseMouseUp}
+                    onMouseLeave={handleVerseMouseLeave}
+                    onTouchStart={(e) => handleVerseTouchStart(verse, e)}
+                    onTouchEnd={handleVerseTouchEnd}
                   >
                     <p 
                       className="select-text" 
@@ -709,6 +792,52 @@ export default function BibleReader({ }: BibleReaderProps) {
             className="w-8 h-8 bg-pink-200 rounded-md hover:bg-pink-300 transition-all border border-pink-300"
             title="Pink highlight"
           />
+        </div>
+      )}
+
+      {/* Verse Menu */}
+      {showVerseMenu && selectedVerseForMenu && (
+        <div
+          className="fixed z-20 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3 min-w-[200px]"
+          style={{ left: menuPosition.x - 100, top: menuPosition.y - 80 }}
+        >
+          <div className="mb-2">
+            <p className="text-sm font-medium text-gray-900 dark:text-white">
+              {selectedBook} {selectedChapter}:{selectedVerseForMenu.verse}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+              {selectedVerseForMenu.text.substring(0, 60)}...
+            </p>
+          </div>
+          <div className="space-y-2">
+            <button
+              onClick={navigateToVerseWallpaper}
+              className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Create Wallpaper</span>
+            </button>
+            <button
+              onClick={() => addBookmark(selectedVerseForMenu.verse)}
+              className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              <span>Bookmark Verse</span>
+            </button>
+            <button
+              onClick={() => setShowVerseMenu(false)}
+              className="w-full flex items-center space-x-2 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <span>Cancel</span>
+            </button>
+          </div>
         </div>
       )}
 

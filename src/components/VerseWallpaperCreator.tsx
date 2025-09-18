@@ -86,6 +86,7 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
 
   useEffect(() => {
     loadTranslations();
+    loadSelectedVerse();
   }, []);
 
   const loadTranslations = () => {
@@ -102,6 +103,21 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
       }
     } catch (error) {
       console.error('Failed to load translations from localStorage:', error);
+    }
+  };
+
+  const loadSelectedVerse = () => {
+    try {
+      const savedVerse = localStorage.getItem('selectedVerseForWallpaper');
+      if (savedVerse) {
+        const verseData = JSON.parse(savedVerse);
+        setCustomVerse(verseData.verse);
+        setCustomReference(verseData.reference);
+        // Clear the stored verse after loading
+        localStorage.removeItem('selectedVerseForWallpaper');
+      }
+    } catch (error) {
+      console.error('Failed to load selected verse:', error);
     }
   };
 
