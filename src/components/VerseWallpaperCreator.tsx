@@ -161,14 +161,18 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
   };
 
   const downloadWallpaper = async () => {
-    if (wallpaperRef.current) {
-      // Create a temporary full-size element for rendering (vertical orientation)
+    if (!wallpaperRef.current) return;
+    
+    try {
+      // Create a temporary full-size element for rendering
       const tempElement = wallpaperRef.current.cloneNode(true) as HTMLElement;
       tempElement.style.width = '1080px';
       tempElement.style.height = '1920px';
-      tempElement.style.position = 'absolute';
+      tempElement.style.position = 'fixed';
       tempElement.style.left = '-9999px';
-      tempElement.style.top = '-9999px';
+      tempElement.style.top = '0';
+      tempElement.style.zIndex = '-1';
+      tempElement.style.visibility = 'hidden';
       
       // Scale up font sizes for full resolution
       const blockquote = tempElement.querySelector('blockquote') as HTMLElement;
@@ -176,6 +180,7 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
       
       if (blockquote) {
         blockquote.style.fontSize = `${fontSize}px`;
+        blockquote.style.lineHeight = '1.4';
       }
       if (cite) {
         cite.style.fontSize = `${fontSize * 0.75}px`;
@@ -183,26 +188,58 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
       
       document.body.appendChild(tempElement);
       
+      // Wait for fonts and images to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const canvas = await html2canvas(tempElement, {
         width: 1080,
         height: 1920,
         scale: 1,
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Ensure all fonts are loaded in the cloned document
+          const clonedElement: any = clonedDoc.querySelector('[data-html2canvas-ignore]');
+          if (clonedElement) {
+            clonedElement.style.fontDisplay = 'block';
+          }
+        }
       });
       
       document.body.removeChild(tempElement);
       
-      const link = document.createElement('a');
-      link.download = 'verse-wallpaper-1080x1920.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
-    }
-  };
-
-  const shareWallpaper = async () => {
-    const currentVerse = getCurrentVerse();
-    if (wallpaperRef.current && navigator.share && currentVerse) {
+      // Convert to blob for better mobile compatibility
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        
+        // For mobile devices, try different download methods
+        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+          // Mobile download approach
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'verse-wallpaper-1080x1920.png';
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else {
+          // Desktop download
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = 'verse-wallpaper-1080x1920.png';
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png', 1.0);
+      
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: try direct canvas download
       const canvas = await html2canvas(wallpaperRef.current, {
         width: 1080,
         height: 1920,
@@ -211,16 +248,81 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
         allowTaint: true
       });
       
-      canvas.toBlob(async (blob) => {
-        if (blob) {
-          const file = new File([blob], 'verse-wallpaper.png', { type: 'image/png' });
-          await navigator.share({
-            files: [file],
-            title: 'Bible Verse Wallpaper',
-            text: `${currentVerse.reference} - ${currentVerse.verse}`
-          });
-        }
+      const link = document.createElement('a');
+      link.download = 'verse-wallpaper.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    }
+  };
+
+  const shareWallpaper = async () => {
+    const currentVerse = getCurrentVerse();
+    if (!wallpaperRef.current || !currentVerse) return;
+    
+    try {
+      // Check if Web Share API is supported
+      if (!navigator.share) {
+        // Fallback to download on unsupported browsers
+        await downloadWallpaper();
+        return;
+      }
+      
+      // Create canvas for sharing
+      const canvas = await html2canvas(wallpaperRef.current, {
+        width: 1080,
+        height: 1920,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false
       });
+      
+      // Convert to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+        }, 'image/png', 0.9);
+      });
+      
+      if (!blob) {
+        throw new Error('Failed to create image blob');
+      }
+      
+      // Check if files can be shared
+      if (navigator.canShare && !navigator.canShare({ files: [new File([blob], 'verse.png', { type: 'image/png' })] })) {
+        // Fallback to text sharing
+        await navigator.share({
+          title: 'Bible Verse Wallpaper',
+          text: `${currentVerse.reference} - "${currentVerse.verse}"`
+        });
+        return;
+      }
+      
+      // Share with file
+      const file = new File([blob], 'verse-wallpaper.png', { type: 'image/png' });
+      await navigator.share({
+        files: [file],
+        title: 'Bible Verse Wallpaper',
+        text: `${currentVerse.reference} - "${currentVerse.verse}"`
+      });
+      
+    } catch (error) {
+      console.error('Share failed:', error);
+      
+      // Ultimate fallback: copy text to clipboard
+      if (navigator.clipboard && currentVerse) {
+        try {
+          await navigator.clipboard.writeText(`${currentVerse.reference} - "${currentVerse.verse}"`);
+          alert('Verse copied to clipboard!');
+        } catch (clipboardError) {
+          console.error('Clipboard failed:', clipboardError);
+          // Final fallback: download
+          await downloadWallpaper();
+        }
+      } else {
+        await downloadWallpaper();
+      }
     }
   };
 
@@ -292,8 +394,9 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
         <div className="p-4 flex justify-center bg-white/5 backdrop-blur-sm border-b border-white/10">
           <div className="relative">
             <div
+            
               ref={wallpaperRef}
-              className={`w-48 h-80 rounded-2xl overflow-hidden shadow-2xl relative flex flex-col justify-center items-center p-6 ${
+              className={`w-48 h-80 rounded-2xl backdrop-blur-sm overflow-hidden shadow-2xl relative flex flex-col justify-center items-center p-6 ${
                 backgroundImage ? '' : `bg-gradient-to-br ${selectedBackground.gradient}`
               }`}
               style={backgroundImage ? {
@@ -339,9 +442,24 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
                 })()}
               </div>
             </div>
-            
-            <div className="text-center mt-2">
-              <span className="text-gray-400 text-xs">Mobile Preview (1080x1920)</span>
+          
+          </div>
+        </div>
+
+        {/* Font Size Control - Below Preview */}
+        <div className="px-4 py-3 bg-white/5 backdrop-blur-sm border-b border-white/10">
+          <div className="max-w-md mx-auto">
+            <label className="text-sm text-gray-300 block mb-2 text-center">Font Size</label>
+            <input
+              type="range"
+              min="40"
+              max="90"
+              value={fontSize}
+              onChange={(e) => setFontSize(Number(e.target.value))}
+              className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+            />
+            <div className="text-center mt-1">
+              <span className="text-xs text-gray-400">{fontSize}px</span>
             </div>
           </div>
         </div>
@@ -492,19 +610,6 @@ export default function VerseWallpaperCreator({ onBack }: VerseWallpaperCreatorP
             <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-white/10">
               <h3 className="text-white font-semibold mb-3">Text Settings</h3>
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-300 block mb-2">Font Size</label>
-                  <input
-                    type="range"
-                    min="40"
-                    max="90"
-                    value={fontSize}
-                    onChange={(e) => setFontSize(Number(e.target.value))}
-                    className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
-                  />
-                  <span className="text-xs text-gray-400">{fontSize}px</span>
-                </div>
-
                 <div>
                   <label className="text-sm text-gray-300 block mb-2">Font Family</label>
                   <select

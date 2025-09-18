@@ -103,12 +103,12 @@ export default function DailyVerse({ onBack }: DailyVerseProps) {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-gray-100 pb-16">
+    <div className="h-full flex flex-col bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white pb-16">
       {/* Glass Header */}
-      <div className="bg-white/5 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex items-center justify-between shadow-2xl flex-shrink-0">
+      <div className="bg-white/10 backdrop-blur-xl border-b border-white/20 px-4 py-3 flex items-center justify-between shadow-2xl flex-shrink-0">
         <button
           onClick={onBack}
-          className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 backdrop-blur-sm"
+          className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-xl transition-all duration-300 backdrop-blur-sm"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -116,12 +116,12 @@ export default function DailyVerse({ onBack }: DailyVerseProps) {
         </button>
         <div className="flex flex-col items-center">
           <span className="text-white font-semibold text-base">Daily Bible Verse</span>
-          <span className="text-white/60 text-xs font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+          <span className="text-white/70 text-xs font-medium">{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
         </div>
         <div className="flex space-x-1">
           <button
             onClick={shareWallpaper}
-            className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 backdrop-blur-sm"
+            className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-xl transition-all duration-300 backdrop-blur-sm"
             title="Share"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,7 +130,7 @@ export default function DailyVerse({ onBack }: DailyVerseProps) {
           </button>
           <button
             onClick={downloadWallpaper}
-            className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 backdrop-blur-sm"
+            className="p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-xl transition-all duration-300 backdrop-blur-sm"
             title="Download"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,10 +143,10 @@ export default function DailyVerse({ onBack }: DailyVerseProps) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div ref={wallpaperRef} className="max-w-3xl mx-auto p-4">
-          {/* Main Verse Card - Reduced Size */}
-          <div className="bg-white/10 backdrop-blur-2xl rounded-2xl p-6 mb-4 shadow-2xl border border-white/20">
+          {/* Main Verse Card */}
+          <div className="bg-white/15 backdrop-blur-2xl rounded-2xl p-6 mb-4 shadow-2xl border border-white/30">
             <div className="text-center">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 border border-white/30">
+              <div className="w-12 h-12 bg-white/25 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-4 border border-white/40">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
                 </svg>
@@ -157,50 +157,50 @@ export default function DailyVerse({ onBack }: DailyVerseProps) {
               </blockquote>
               
               <div className="flex flex-col items-center space-y-2">
-                <cite className="text-white/90 font-semibold text-base drop-shadow-md">
+                <cite className="text-white font-semibold text-base drop-shadow-md">
                   {verse.reference}
                 </cite>
-                <span className="px-3 py-1 bg-white/20 backdrop-blur-xl rounded-full text-white/90 text-xs font-medium border border-white/30">
+                <span className="px-3 py-1 bg-white/25 backdrop-blur-xl rounded-full text-white text-xs font-medium border border-white/40">
                   {verse.theme}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Devotion Section - Reduced Size */}
-          <div className="bg-white/5 backdrop-blur-2xl rounded-xl p-4 mb-4 border border-white/10 shadow-xl">
+          {/* Devotion Section */}
+          <div className="bg-white/10 backdrop-blur-2xl rounded-xl p-4 mb-4 border border-white/20 shadow-xl">
             <h3 className="text-lg font-bold text-white mb-3 flex items-center">
-              <div className="w-5 h-5 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center mr-2">
+              <div className="w-5 h-5 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center mr-2">
                 <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
               </div>
               Today's Devotion
             </h3>
-            <p className="text-white/80 leading-relaxed text-sm mb-3">
+            <p className="text-white/90 leading-relaxed text-sm mb-3">
               {verse.devotion}
             </p>
-            <div className="flex items-center justify-between pt-3 border-t border-white/10">
-              <span className="text-blue-300 text-xs font-medium">
+            <div className="flex items-center justify-between pt-3 border-t border-white/20">
+              <span className="text-blue-200 text-xs font-medium">
                 by {verse.author}
               </span>
-              <span className="text-white/50 text-xs">
+              <span className="text-white/60 text-xs">
                 {new Date().toLocaleDateString()}
               </span>
             </div>
           </div>
 
-          {/* Reflection Section - Reduced Size */}
-          <div className="bg-white/5 backdrop-blur-2xl rounded-xl p-4 border border-white/10 shadow-xl">
+          {/* Reflection Section */}
+          <div className="bg-white/10 backdrop-blur-2xl rounded-xl p-4 border border-white/20 shadow-xl">
             <h3 className="text-lg font-bold text-white mb-3 flex items-center">
-              <div className="w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-400 rounded-full flex items-center justify-center mr-2">
+              <div className="w-5 h-5 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full flex items-center justify-center mr-2">
                 <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
               Personal Reflection
             </h3>
-            <p className="text-white/80 leading-relaxed text-sm">
+            <p className="text-white/90 leading-relaxed text-sm">
               Take a moment to meditate on these words. How can this verse guide your thoughts and actions today?
             </p>
           </div>

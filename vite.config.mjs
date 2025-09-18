@@ -8,6 +8,16 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port: 8107
+    },
+    publicDir: 'public',
+    assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.svg', '**/*.webp'],
+    build: {
+      assetsDir: 'assets',
+      rollupOptions: {
+        output: {
+          assetFileNames: 'assets/[name].[hash][extname]'
+        }
+      }
     }
   }
 })
