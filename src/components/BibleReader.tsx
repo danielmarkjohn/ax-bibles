@@ -497,10 +497,8 @@ export default function BibleReader({ onNavigateToWallpaper }: BibleReaderProps)
     }
   }, []);
 
-  const handleFirstTimeSetup = (translation: string, book: string, chapter: number) => {
-    setSelectedTranslation(translation);
-    setSelectedBook(book);
-    setSelectedChapter(chapter);
+  const handleFirstTimeSetup = () => {
+    setShowActionSheet(true);
     setShowFirstTimeSetup(false);
     localStorage.setItem('bible_reader_used', 'true');
   };
@@ -878,7 +876,7 @@ export default function BibleReader({ onNavigateToWallpaper }: BibleReaderProps)
         onDeleteBookmark={deleteBookmark}
       />
 
-      {/* First Time Setup Modal */}
+      {/* First Time Setup - Simplified */}
       {showFirstTimeSetup && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-gray-800 rounded-2xl p-6 max-w-md w-full border border-gray-700 shadow-2xl">
@@ -892,58 +890,7 @@ export default function BibleReader({ onNavigateToWallpaper }: BibleReaderProps)
               <p className="text-gray-400 text-sm">Choose your preferred translation and starting point</p>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-300 block mb-2">Translation</label>
-                <select
-                  value={selectedTranslation}
-                  onChange={(e) => setSelectedTranslation(e.target.value)}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Translation</option>
-                  {translations.map((translation) => (
-                    <option key={translation._id} value={String(translation.module || '')}>
-                      {translation.abbreviation} - {translation.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-300 block mb-2">Book</label>
-                <select
-                  value={selectedBook}
-                  onChange={(e) => setSelectedBook(e.target.value)}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Book</option>
-                  {BIBLE_BOOKS.map((book) => (
-                    <option key={book} value={book}>
-                      {book}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-300 block mb-2">Chapter</label>
-                <select
-                  value={selectedChapter}
-                  onChange={(e) => setSelectedChapter(Number(e.target.value))}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={!selectedBook}
-                >
-                  <option value={0}>Select Chapter</option>
-                  {selectedBook && getAvailableChapters(selectedBook).map((chapter) => (
-                    <option key={chapter} value={chapter}>
-                      Chapter {chapter}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex space-x-3 mt-6">
+            <div className="flex space-x-3">
               <button
                 onClick={() => {
                   setShowFirstTimeSetup(false);
@@ -954,11 +901,10 @@ export default function BibleReader({ onNavigateToWallpaper }: BibleReaderProps)
                 Skip
               </button>
               <button
-                onClick={() => handleFirstTimeSetup(selectedTranslation, selectedBook, selectedChapter)}
-                disabled={!selectedTranslation || !selectedBook || selectedChapter === 0}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+                onClick={handleFirstTimeSetup}
+                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
               >
-                Start Reading
+                Choose Scripture
               </button>
             </div>
           </div>
