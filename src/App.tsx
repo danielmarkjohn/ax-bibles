@@ -1,9 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BibleReader from './components/BibleReader';
 import Featured from './components/Featured';
+import AdminPanel from './components/AdminPanel';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'bible' | 'featured'>('featured');
+  const [activeTab, setActiveTab] = useState<'bible' | 'featured' | 'admin'>('featured');
+
+  useEffect(() => {
+    // Check URL path on mount and handle routing
+    const path = window.location.pathname;
+    if (path === '/admin') {
+      setActiveTab('admin');
+    } else if (path === '/bible') {
+      setActiveTab('bible');
+    } else {
+      setActiveTab('featured');
+    }
+
+    // Handle browser back/forward buttons
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/admin') {
+        setActiveTab('admin');
+      } else if (path === '/bible') {
+        setActiveTab('bible');
+      } else {
+        setActiveTab('featured');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleTabChange = (tab: 'bible' | 'featured' | 'admin') => {
+    setActiveTab(tab);
+    // Update URL without page reload
+    const path = tab === 'featured' ? '/' : `/${tab}`;
+    window.history.pushState({}, '', path);
+  };
+
+  const handleAdminBack = () => {
+    setActiveTab('featured');
+    window.history.pushState({}, '', '/');
+  };
+
+  if (activeTab === 'admin') {
+    return <AdminPanel onBack={handleAdminBack} />;
+  }
 
   return (
     <div className="bg-gray-900 min-h-screen flex flex-col">
@@ -16,7 +60,7 @@ export default function App() {
       <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
         <div className="flex space-x-2 bg-gray-900/90 rounded-full px-4 py-2 backdrop-blur-md border border-gray-700/40 shadow-lg">
           <button 
-            onClick={() => setActiveTab('bible')}
+            onClick={() => handleTabChange('bible')}
             className={`flex items-center px-4 py-2 rounded-full transition-all duration-300 ${
               activeTab === 'bible' 
                 ? 'text-white bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/30 scale-105' 
@@ -30,7 +74,7 @@ export default function App() {
           </button>
           
           <button 
-            onClick={() => setActiveTab('featured')}
+            onClick={() => handleTabChange('featured')}
             className={`flex items-center px-4 py-2 rounded-full transition-all duration-300 ${
               activeTab === 'featured' 
                 ? 'text-white bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30 scale-105' 

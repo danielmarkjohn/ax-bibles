@@ -45,16 +45,22 @@ const dailyVerses = [
 
 export default function DailyVerse({ onBack }: DailyVerseProps) {
   const [currentVerse, setCurrentVerse] = useState(0);
+  const [verses, setVerses] = useState(dailyVerses);
   const wallpaperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Load verses from localStorage (admin managed) or use default
+    const savedVerses = localStorage.getItem('dailyVerses');
+    const versesToUse = savedVerses ? JSON.parse(savedVerses) : dailyVerses;
+    setVerses(versesToUse);
+    
     // Get today's verse based on day of year
     const today = new Date();
     const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
-    setCurrentVerse(dayOfYear % dailyVerses.length);
+    setCurrentVerse(dayOfYear % versesToUse.length);
   }, []);
 
-  const verse = dailyVerses[currentVerse];
+  const verse = verses[currentVerse];
 
   const downloadWallpaper = async () => {
     if (wallpaperRef.current) {
